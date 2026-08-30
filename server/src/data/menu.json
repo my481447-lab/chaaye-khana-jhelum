@@ -1,0 +1,41 @@
+{
+  "currency": "PKR",
+  "currencySymbol": "Rs.",
+  "note": "Item names and prices are taken verbatim from the Chaaye Khana menu (chaayekhana.com). This is the brand menu; confirm current pricing, item names and availability with the Jhelum branch. Descriptions are generic (what each dish is), not the restaurant's own menu copy.",
+  "categories": [
+    { "id": "breakfast", "name": "Breakfast" },
+    { "id": "sandwiches", "name": "Salads, Soups & Sandwiches" },
+    { "id": "specials", "name": "Specials" },
+    { "id": "pizzas", "name": "Pizzas" },
+    { "id": "snacks", "name": "Snacks" },
+    { "id": "chefs-special", "name": "Chef's Special" },
+    { "id": "tea-coffee", "name": "Tea & Coffee" },
+    { "id": "desserts", "name": "Bakery & Desserts" }
+  ],
+  "items": [
+    { "id": "nutella-stuffed-french-toast", "name": "Nutella Stuffed French Toast", "category": "breakfast", "price": 1675, "description": "Thick French toast with a warm Nutella filling." },
+    { "id": "pancakes", "name": "Pancakes", "category": "breakfast", "price": 895, "description": "A stack of fluffy pancakes, served with syrup." },
+    { "id": "beef-nihari", "name": "Beef Nihari", "category": "breakfast", "price": 1850, "description": "Slow-cooked beef shank in a spiced gravy — a classic Pakistani breakfast." },
+    { "id": "club-sandwich", "name": "Club Sandwich", "category": "sandwiches", "price": 1825, "description": "Triple-decker sandwich. Choice of bread: white, brown or focaccia." },
+    { "id": "crispy-chicken-zinger", "name": "Crispy Chicken Zinger", "category": "sandwiches", "price": 1495, "description": "Crunchy fried chicken fillet in a bun with salad and mayo." },
+    { "id": "steak-sandwich", "name": "Steak Sandwich", "category": "sandwiches", "price": 1595, "description": "Toasted sandwich stacked with sliced beef steak." },
+    { "id": "fettuccine-alfredo", "name": "Fettuccine Alfredo", "category": "specials", "price": 2295, "description": "Ribbon pasta tossed in a creamy parmesan white sauce." },
+    { "id": "chicken-steak", "name": "Chicken Steak", "category": "specials", "price": 1795, "description": "Grilled chicken steak served with sauce and sides." },
+    { "id": "chicken-parmesan", "name": "Chicken Parmesan", "category": "specials", "price": 2295, "description": "Breaded chicken baked with tomato sauce and melted cheese." },
+    { "id": "margherita", "name": "Margherita", "category": "pizzas", "price": 1475, "description": "Classic pizza — tomato, mozzarella and basil." },
+    { "id": "pepperoni", "name": "Pepperoni", "category": "pizzas", "price": 1725, "description": "Tomato and mozzarella pizza topped with pepperoni." },
+    { "id": "chicken-and-jalapeno", "name": "Chicken & Jalapeno", "category": "pizzas", "price": 1725, "description": "Pizza with chicken and sliced jalapeños." },
+    { "id": "chaat-platter", "name": "Chaat Platter", "category": "snacks", "price": 1595, "description": "An assortment of tangy, spiced South-Asian street-food chaat." },
+    { "id": "chicken-wings", "name": "Chicken Wings", "category": "snacks", "price": 1625, "description": "Fried chicken wings tossed in sauce." },
+    { "id": "assorted-pakoras", "name": "Assorted Pakoras", "category": "snacks", "price": 975, "description": "A mix of gram-flour fritters, fried crisp." },
+    { "id": "chicken-chow-mein", "name": "Chicken Chow Mein", "category": "chefs-special", "price": 1450, "description": "Stir-fried noodles with chicken and vegetables. Choice of garlic, egg-fried or steamed rice." },
+    { "id": "basil-chicken", "name": "Basil Chicken", "category": "chefs-special", "price": 2150, "description": "Chicken stir-fried with fresh basil and chilli. Served with garlic, egg-fried or steamed rice." },
+    { "id": "chicken-chili-dry", "name": "Chicken Chili Dry", "category": "chefs-special", "price": 1850, "description": "Indo-Chinese chicken tossed dry with onion, peppers and green chilli. Served with garlic, egg-fried or steamed rice." },
+    { "id": "ck-karak-chaaye", "name": "CK Karak Chaaye", "category": "tea-coffee", "price": 475, "description": "Black tea boiled strong and hard with milk — the house karak." },
+    { "id": "doodh-patti", "name": "Doodh Patti", "category": "tea-coffee", "price": 395, "description": "Tea brewed entirely in milk, no water — thick and rich." },
+    { "id": "ck-masala-chaaye", "name": "CK Masala Chaaye", "category": "tea-coffee", "price": 575, "description": "Milky tea simmered with cardamom, cinnamon and clove." },
+    { "id": "chocolate-molten-cake", "name": "Chocolate Molten Cake", "category": "desserts", "price": 1250, "description": "Warm chocolate cake with a soft, molten centre." },
+    { "id": "skillet-cookie-with-ice-cream", "name": "Skillet Cookie with Ice Cream", "category": "desserts", "price": 1475, "description": "A warm cookie baked in a skillet, topped with ice cream." },
+    { "id": "chocolate-brownie", "name": "Chocolate Brownie", "category": "desserts", "price": 450, "description": "Dense, fudgy chocolate brownie." }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "note": "The overall rating and the excerpts below are real, collected from public Google reviews via a third-party aggregator (wanderlog.com/place/details/3410955/chaaye-khana-jhelum). Names and star ratings are as published; review text is shown exactly as the source gives it and is truncated with '…'. Verify current figures and pull full review text from the branch's Google Business listing before relying on them. Nothing here is invented.",
+  "summary": {
+    "google": { "rating": 4.1, "count": 2524, "outOf": 5 },
+    "tripadvisor": { "rating": 2.8, "count": 13, "outOf": 5 }
+  },
+  "viewAllUrl": "https://www.google.com/maps/search/?api=1&query=Chaaye%20Khana%20Jhelum",
+  "excerpts": [
+    {
+      "id": "review-1",
+      "author": "Sufyan S",
+      "rating": 5,
+      "source": "Google review",
+      "date": "Oct 2025",
+      "text": "This place was amazing…the setup and vibe of the place is 10/10 so clean and maintained…",
+      "truncated": true
+    },
+    {
+      "id": "review-2",
+      "author": "JahanZeb B",
+      "rating": 4,
+      "source": "Google review",
+      "date": "Nov 2025",
+      "text": "Its my goto spot every time I visit Pakistan…Highly recommended for anyone who loves authentic, soul-satisfying Pakistani breakfast. 5/5 stars.",
+      "truncated": true
+    },
+    {
+      "id": "review-3",
+      "author": "Jamal Z",
+      "rating": 3,
+      "source": "Google review",
+      "date": "Dec 2025",
+      "text": "It was my first time visiting this chaaye khana restaurant, and I was genuinely impressed. The food was incredibly fresh and delicious…",
+      "truncated": true
+    }
+  ]
+}

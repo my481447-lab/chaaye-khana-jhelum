@@ -1,0 +1,97 @@
+{
+  "name": "Chaaye Khana",
+  "branch": "Jhelum",
+  "aka": ["Chai Khana Jhelum", "Chaaye Khana Jhelum", "Chaaye' Khana Jhelum"],
+  "tagline": "Chaaye Khana, all day — a place to sit down, relax and enjoy.",
+  "about": "Chaaye Khana, Jhelum is a fine-dining tea house and kitchen on GT Road, near the PSO Riverside filling station in Jhelum Cantonment. It is built around specialty teas, all-day breakfast and a full kitchen — Pakistani, Chinese and Continental dishes, BBQ, pizzas, sandwiches, a bakery counter of cakes and desserts, and steaks. Guests come to play a round of chess or linger with friends over a pot of tea; seating runs both indoors and outdoors.",
+  "cuisine": ["Pakistani", "Chinese", "Continental", "BBQ", "Breakfast", "Cafe / Tea house"],
+  "contact": {
+    "phone": [
+      { "label": "Landline", "number": "(0544) 610711", "dial": "+92544610711" },
+      { "label": "Reservations (mobile)", "number": "+92 329 1509505", "dial": "+923291509505" }
+    ],
+    "email": "tasteridefood@gmail.com",
+    "emailNote": "Published on the branch's Tripadvisor listing — confirm it is customer-facing before relying on it.",
+    "social": {
+      "facebook": "https://www.facebook.com/ChaayeKhanaOfficial/",
+      "instagram": "https://www.instagram.com/chaaye_khana_jhelum/",
+      "x": "https://x.com/chaayekhanajhel",
+      "tiktok": "https://www.tiktok.com/@chaayekhana.jhelum",
+      "youtube": null,
+      "youtubeNote": "No official Chaaye Khana Jhelum YouTube channel could be verified."
+    }
+  },
+  "location": {
+    "addressLines": [
+      "Next to Adventura Park",
+      "GT Road, Jhelum Cantt",
+      "Jhelum, Punjab 49600",
+      "Pakistan"
+    ],
+    "landmark": "Near the PSO Riverside filling station",
+    "city": "Jhelum",
+    "region": "Punjab",
+    "postalCode": "49600",
+    "country": "PK",
+    "geo": null,
+    "geoNote": "Exact latitude/longitude is not verified. Use the maps links below.",
+    "maps": {
+      "search": "https://www.google.com/maps/search/?api=1&query=Chaaye%20Khana%20GT%20Road%20Jhelum%20Cantt",
+      "directions": "https://www.google.com/maps/dir/?api=1&destination=Chaaye%20Khana%2C%20GT%20Road%2C%20Jhelum%20Cantt",
+      "embed": "https://www.google.com/maps?q=Chaaye%20Khana%20GT%20Road%20Jhelum%20Cantt&output=embed"
+    }
+  },
+  "openingHours": {
+    "note": "These are the hours listed across Google-fed directories for this branch. Confirm on the branch's own Google listing before a late visit.",
+    "timezone": "Asia/Karachi",
+    "weekly": [
+      { "day": "Sunday", "opens": "08:00", "closes": "00:00", "closesLabel": "midnight" },
+      { "day": "Monday", "opens": "08:00", "closes": "00:00", "closesLabel": "midnight" },
+      { "day": "Tuesday", "opens": "08:00", "closes": "00:00", "closesLabel": "midnight" },
+      { "day": "Wednesday", "opens": "08:00", "closes": "00:00", "closesLabel": "midnight" },
+      { "day": "Thursday", "opens": "08:00", "closes": "00:00", "closesLabel": "midnight" },
+      { "day": "Friday", "opens": "08:00", "closes": "01:00", "closesLabel": "1:00 am" },
+      { "day": "Saturday", "opens": "08:00", "closes": "01:00", "closesLabel": "1:00 am" }
+    ],
+    "summary": "Sunday–Thursday: 8:00 am – midnight. Friday–Saturday: 8:00 am – 1:00 am."
+  },
+  "facilities": {
+    "dineIn": { "available": true },
+    "outdoorSeating": { "available": true },
+    "indoorSeating": { "available": true },
+    "familyFriendly": { "available": true, "note": "Indoor and outdoor seating suits larger tables and family visits; the branch is used for occasions such as birthdays." },
+    "chess": { "available": true, "note": "The branch runs regular in-house chess competitions and guests play casually." },
+    "allDayBreakfast": { "available": true },
+    "reservations": { "available": true, "note": "Call the reservations mobile: +92 329 1509505." },
+    "kidsPlayArea": {
+      "available": null,
+      "note": "A dedicated kids / children's play area is NOT confirmed for the Jhelum branch. Please check directly with the restaurant."
+    },
+    "parking": { "available": null, "note": "Not confirmed — please check with the restaurant." },
+    "wifi": { "available": null, "note": "Not confirmed — please check with the restaurant." },
+    "delivery": { "available": null, "note": "Not confirmed for this branch — please check with the restaurant or its delivery partners." }
+  },
+  "websiteFeatures": [
+    "Browse the full menu with category filters (Breakfast, Salads/Soups & Sandwiches, Specials, Pizzas, Snacks, Chef's Special, Tea & Coffee, Bakery & Desserts).",
+    "Search the menu by dish name, category or ingredient.",
+    "Add items to a shopping cart and see the subtotal and total (prices come from the verified menu).",
+    "View current offers.",
+    "Photo gallery with a lightbox.",
+    "Customer reviews and the overall Google rating.",
+    "Location section with a Google map and 'Get Directions'.",
+    "Contact section with tap-to-call phone numbers, email and social links.",
+    "This chat assistant, for questions about Chaaye Khana, Jhelum."
+  ],
+  "history": {
+    "note": "No founding date, ownership story or awards have been verified for the Jhelum branch, so none are stated. Chaaye Khana is a Pakistani tea-house brand; its brand site is https://www.chaayekhana.com/."
+  },
+  "sources": [
+    "Official Chaaye Khana menu — https://www.chaayekhana.com/copy-of-menu-1 (item names + prices, verified verbatim)",
+    "Official Chaaye Khana promos page — https://www.chaayekhana.com/services-1 (Ladies' Tuesday, Chess Competitions)",
+    "Official Chaaye Khana locations page (address, landline)",
+    "Booking / directory listings (reservations mobile, opening hours)",
+    "Facebook page 'Chaaye' Khana Jhelum' — https://www.facebook.com/ChaayeKhanaOfficial/ (cuisine, description)",
+    "Public Google reviews via aggregator wanderlog.com/place/details/3410955/chaaye-khana-jhelum (rating + review excerpts)",
+    "Web search, Aug 2026 (social profiles)"
+  ]
+}

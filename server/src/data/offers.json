@@ -1,0 +1,23 @@
+{
+  "note": "Programmes taken from the official Chaaye Khana promos page (chaayekhana.com/services-1). They are brand-wide programmes, not confirmed Jhelum-specific, and the page publishes no price, discount percentage or expiry — none has been added. The Jhelum branch may also run its own seasonal deals; those are not listed here because they are not verified.",
+  "offers": [
+    {
+      "id": "ladies-tuesday",
+      "title": "Ladies' Tuesday",
+      "description": "A complimentary cup of tea for every woman who visits, every Tuesday.",
+      "schedule": "Every Tuesday",
+      "price": null,
+      "discount": null,
+      "expiry": null
+    },
+    {
+      "id": "chess-competitions",
+      "title": "Chess Competitions",
+      "description": "Regular in-house chess tournaments, open to players of every level.",
+      "schedule": "Held regularly",
+      "price": null,
+      "discount": null,
+      "expiry": null
+    }
+  ]
+}
