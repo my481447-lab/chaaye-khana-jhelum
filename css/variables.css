@@ -1,0 +1,88 @@
+/* ============================================================
+   CHAAYE KHANA — DESIGN TOKENS
+   Colour palette, typography scale, spacing, radii, shadows.
+   Warm · elegant · modern · premium.
+   ============================================================ */
+
+:root {
+  /* ----------  COLOUR PALETTE  ---------- */
+
+  /* Warm neutrals — the canvas */
+  --color-cream:        #FAF4EA;  /* page background            */
+  --color-ivory:        #F1E7D6;  /* muted section background   */
+  --color-sand:         #E4D5BE;  /* borders, dividers          */
+
+  /* Espresso & spice — the ink */
+  --color-espresso:     #2A1C12;  /* headings, deep surfaces    */
+  --color-cocoa:        #4A3626;  /* body text                  */
+  --color-clay:         #7A6551;  /* muted text, captions       */
+
+  /* Accents — the warmth */
+  --color-saffron:      #C8892F;  /* primary accent / CTAs      */
+  --color-saffron-deep: #A96E1F;  /* accent hover               */
+  --color-terracotta:   #B24C33;  /* secondary accent           */
+  --color-tea-green:    #4E5D42;  /* tertiary accent            */
+
+  /* Functional */
+  --color-bg:           var(--color-cream);
+  --color-surface:      #FFFFFF;
+  --color-hero-ink:     #140D09;  /* hero photo darkening base */
+  --color-text:         var(--color-cocoa);
+  --color-heading:      var(--color-espresso);
+  --color-border:       var(--color-sand);
+  --color-on-dark:      #F3E7D4;
+
+  /* ----------  TYPOGRAPHY  ---------- */
+  --font-display: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
+  --font-body:    "Jost", "Helvetica Neue", Arial, sans-serif;
+
+  /* Fluid type scale */
+  --fs-hero:    clamp(2.75rem, 6vw + 1rem, 5.5rem);
+  --fs-h2:      clamp(2rem, 3vw + 1rem, 3.25rem);
+  --fs-h3:      clamp(1.25rem, 1vw + 1rem, 1.6rem);
+  --fs-lede:    clamp(1.1rem, 0.6vw + 1rem, 1.35rem);
+  --fs-body:    1rem;
+  --fs-small:   0.875rem;
+  --fs-eyebrow: 0.78rem;
+
+  --lh-tight:   1.12;
+  --lh-snug:    1.35;
+  --lh-body:    1.7;
+
+  --tracking-eyebrow: 0.22em;
+  --tracking-wide:    0.06em;
+
+  /* ----------  SPACING  ---------- */
+  --space-2xs: 0.375rem;
+  --space-xs:  0.75rem;
+  --space-sm:  1.25rem;
+  --space-md:  2rem;
+  --space-lg:  3.5rem;
+  --space-xl:  6rem;
+  --space-2xl: 9rem;
+
+  --container-max: 1200px;
+  --container-pad: clamp(1.25rem, 5vw, 3rem);
+
+  /* ----------  RADII  ---------- */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* ----------  SHADOWS  ---------- */
+  --shadow-sm: 0 2px 8px rgba(42, 28, 18, 0.06);
+  --shadow-md: 0 12px 30px rgba(42, 28, 18, 0.10);
+  --shadow-lg: 0 24px 60px rgba(42, 28, 18, 0.14);
+
+  /* ----------  MOTION  ---------- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur:  0.35s;
+
+  /* ----------  LAYOUT  ---------- */
+  --header-h: 76px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0s; }
+}
