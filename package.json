@@ -5,7 +5,7 @@
   "description": "Chaaye Khana, Jhelum — restaurant website + guardrailed backend agent (Vercel).",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "scripts": {
     "dev:backend": "node server/src/index.js",
