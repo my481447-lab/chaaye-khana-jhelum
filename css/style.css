@@ -1931,6 +1931,19 @@ p { max-width: 62ch; }
   color: #fff;
   box-shadow: none;
 }
+.chat__bubble a { color: var(--color-saffron-deep); }
+.chat__msg--typing .chat__bubble {
+  color: var(--color-clay);
+  letter-spacing: 0.15em;
+  animation: chat-typing 1.1s ease-in-out infinite;
+}
+@keyframes chat-typing {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat__msg--typing .chat__bubble { animation: none; }
+}
 .chat__action {
   display: inline-block;
   margin-top: 0.45rem;

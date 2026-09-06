@@ -560,89 +560,86 @@
     });
   }
 
-  /* ----------  Floating chat widget (static FAQ assistant)  ----------
-     No backend. Every answer is drawn only from information already
-     verified elsewhere on this page or from the published phone
-     numbers; unknowns defer to the branch instead of guessing. */
+  /* ----------  Floating chat widget  ----------
+     Talks to the backend restaurant agent at data-chat-endpoint
+     (POST { message, history } -> { reply }). The Anthropic API key
+     lives ONLY on that server — it is never present in this file or
+     sent from the browser. If the backend can't be reached, the widget
+     falls back to the verified offline answers below. */
   var chat = document.querySelector("[data-chat]");
   if (chat) {
-    var chatPanel = chat.querySelector("[data-chat-panel]");
     var chatLauncher = chat.querySelector("[data-chat-open]");
     var chatLog = chat.querySelector("[data-chat-log]");
     var chatSuggests = chat.querySelector("[data-chat-suggests]");
     var chatForm = chat.querySelector("[data-chat-form]");
     var chatInput = chat.querySelector(".chat__input");
+    var chatSend = chat.querySelector(".chat__send");
     var chatOpen = false;
     var chatGreeted = false;
+    var chatBusy = false;
 
-    var CHAT_ANSWERS = {
-      menu: {
-        lines: [
-          "Our full menu is on this page. Dish names and prices are taken from the Chaaye Khana menu — the Jhelum branch can vary, so please confirm when you visit."
-        ],
-        action: { label: "Open the menu", href: "#menu" }
-      },
-      prices: {
-        lines: [
-          "Every item shows its exact price on the menu. I'd rather not quote figures here that might be out of date — please check the menu section, and confirm with the branch when you order."
-        ],
-        action: { label: "See prices on the menu", href: "#menu" }
-      },
-      offers: {
-        lines: [
-          "Two regular programmes from Chaaye Khana:",
-          "• Ladies’ Tuesday — a complimentary cup of tea for every woman who visits, every Tuesday.",
-          "• Chess Competitions — regular in-house tournaments, open to all levels.",
-          "No discounts, prices or dates beyond these are confirmed. The branch may also run its own seasonal deals — best to ask them directly."
-        ],
-        action: { label: "View offers", href: "#offers" }
-      },
-      location: {
-        lines: [
-          "Chaaye Khana, Jhelum is on GT Road, Jhelum Cantt — next to Adventura Park, near the PSO Riverside filling station."
-        ],
-        action: { label: "Open map & directions", href: "#location" }
-      },
-      hours: {
-        lines: [
-          "Listed opening hours:",
-          "• Sunday–Thursday: 8:00 am – midnight",
-          "• Friday–Saturday: 8:00 am – 1:00 am",
-          "These are the times shown in online directories — worth confirming on our Google listing before a late visit."
-        ]
-      },
-      contact: {
-        lines: [
-          "You can reach the branch on (0544) 610711, or +92 329 1509505 for reservations."
-        ],
-        action: { label: "Go to contact", href: "#contact" }
-      }
-    };
+    var CHAT_ENDPOINT =
+      chat.getAttribute("data-chat-endpoint") || "/api/chat";
 
-    var CHAT_LABELS = {
-      menu: "Show me the menu",
-      prices: "What are the prices?",
-      offers: "What offers are available?",
-      location: "Where are you located?",
-      hours: "What are your opening hours?"
-    };
-
-    var CHAT_FALLBACK =
-      "Sorry — I can only help with a few common questions from our website. " +
-      "Try a suggested question below, or contact the branch directly on " +
-      "(0544) 610711 or +92 329 1509505.";
+    // Rolling conversation sent to the agent (it caps this server-side too).
+    var chatHistory = []; // [{ role: "user"|"assistant", content }]
+    var CHAT_HISTORY_MAX = 12;
 
     var CHAT_GREETING =
-      "Hi! I can help with a few things about Chaaye Khana, Jhelum — " +
-      "pick a question below, or type your own.";
+      "Hi! I can help with the Chaaye Khana, Jhelum menu, prices, offers, " +
+      "opening hours, location and contact details — ask away, or pick a " +
+      "question below.";
+
+    // Offline fallback — only used if the backend can't be reached.
+    var CHAT_OFFLINE = {
+      menu:
+        "Our full menu is on this page (tap Explore Menu). Dish names and " +
+        "prices are from the Chaaye Khana menu — confirm current prices with " +
+        "the branch on (0544) 610711.",
+      prices:
+        "Every item shows its exact price on the menu on this page. Confirm " +
+        "current prices with the branch on (0544) 610711.",
+      offers:
+        "Regular programmes: Ladies’ Tuesday (complimentary tea for women, " +
+        "every Tuesday) and in-house Chess Competitions. Ask the branch about " +
+        "any current seasonal deals: (0544) 610711.",
+      location:
+        "Chaaye Khana, Jhelum is on GT Road, Jhelum Cantt — next to Adventura " +
+        "Park, near the PSO Riverside filling station.",
+      hours:
+        "Listed hours: Sunday–Thursday 8:00 am – midnight, Friday–Saturday " +
+        "8:00 am – 1:00 am. Worth confirming on our Google listing.",
+      _default:
+        "Sorry — I can’t reach our assistant right now. Please try again in a " +
+        "moment, or call the branch on (0544) 610711 (or +92 329 1509505 for " +
+        "reservations)."
+    };
 
     function chatScroll() {
       chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    function chatAddText(who, text) {
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
+
+    // Tiny, safe renderer: escape everything, then allow **bold** and links.
+    function renderReply(text) {
+      var html = escapeHtml(text);
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/(https?:\/\/[^\s<]+)/g, function (url) {
+        return (
+          '<a href="' + url + '" target="_blank" rel="noopener">' + url + "</a>"
+        );
+      });
+      return html;
+    }
+
+    function chatAddUser(text) {
       var msg = document.createElement("div");
-      msg.className = "chat__msg chat__msg--" + who;
+      msg.className = "chat__msg chat__msg--user";
       var bubble = document.createElement("p");
       bubble.className = "chat__bubble";
       bubble.textContent = text;
@@ -651,54 +648,94 @@
       chatScroll();
     }
 
-    function chatAddAnswer(key) {
-      var a = CHAT_ANSWERS[key];
-      if (!a) {
-        chatAddText("bot", CHAT_FALLBACK);
-        return;
-      }
+    function chatAddBot(text, opts) {
       var msg = document.createElement("div");
       msg.className = "chat__msg chat__msg--bot";
       var bubble = document.createElement("p");
       bubble.className = "chat__bubble";
-      bubble.textContent = a.lines.join("\n");
+      if (opts && opts.html) bubble.innerHTML = renderReply(text);
+      else bubble.textContent = text;
       msg.appendChild(bubble);
-      if (a.action) {
-        var link = document.createElement("a");
-        link.className = "chat__action";
-        link.href = a.action.href;
-        link.textContent = a.action.label + " →";
-        link.addEventListener("click", function () {
-          setChat(false);
-        });
-        msg.appendChild(link);
-      }
       chatLog.appendChild(msg);
       chatScroll();
+      return msg;
     }
 
-    function chatIntent(text) {
-      var t = text.toLowerCase();
-      if (/menu|dish|dishes|eat|food/.test(t)) return "menu";
-      if (/price|prices|cost|how much|rate|rupee|\brs\b/.test(t)) return "prices";
-      if (/offer|deal|discount|promo|tuesday|chess/.test(t)) return "offers";
-      if (/where|located|location|address|map|direction|reach you|find you/.test(t)) return "location";
-      if (/hour|open|opening|close|closing|timing|what time|when are you/.test(t)) return "hours";
-      if (/phone|call|contact|number|reserv|book|email/.test(t)) return "contact";
-      return null;
+    function setChatBusy(busy) {
+      chatBusy = busy;
+      if (chatInput) chatInput.disabled = busy;
+      if (chatSend) chatSend.disabled = busy;
     }
 
-    function chatAsk(key, label) {
-      chatAddText("user", label || CHAT_LABELS[key] || key);
-      window.setTimeout(function () {
-        chatAddAnswer(key);
-      }, 260);
+    function askAgent(message) {
+      if (chatBusy) return;
+      chatAddUser(message);
+      chatHistory.push({ role: "user", content: message });
+      setChatBusy(true);
+
+      var typing = chatAddBot("…");
+      typing.classList.add("chat__msg--typing");
+
+      var controller =
+        typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timeout = window.setTimeout(function () {
+        if (controller) controller.abort();
+      }, 20000);
+
+      fetch(CHAT_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: message,
+          history: chatHistory.slice(-CHAT_HISTORY_MAX)
+        }),
+        signal: controller ? controller.signal : undefined
+      })
+        .then(function (res) {
+          return res.json().catch(function () {
+            return {};
+          });
+        })
+        .then(function (data) {
+          var reply =
+            data && typeof data.reply === "string" && data.reply.trim()
+              ? data.reply.trim()
+              : CHAT_OFFLINE._default;
+          typing.querySelector(".chat__bubble").innerHTML = renderReply(reply);
+          typing.classList.remove("chat__msg--typing");
+          chatHistory.push({ role: "assistant", content: reply });
+        })
+        .catch(function () {
+          typing.querySelector(".chat__bubble").textContent =
+            offlineAnswerFor(message);
+          typing.classList.remove("chat__msg--typing");
+          // don't keep a failed turn in history
+          chatHistory.pop();
+        })
+        .then(function () {
+          window.clearTimeout(timeout);
+          setChatBusy(false);
+          chatScroll();
+          if (chatInput) chatInput.focus({ preventScroll: true });
+        });
+    }
+
+    function offlineAnswerFor(message) {
+      var t = message.toLowerCase();
+      if (/menu|dish|eat|food/.test(t)) return CHAT_OFFLINE.menu;
+      if (/price|cost|how much|rupee|\brs\b/.test(t)) return CHAT_OFFLINE.prices;
+      if (/offer|deal|discount|tuesday|chess/.test(t)) return CHAT_OFFLINE.offers;
+      if (/where|located|location|address|map|direction/.test(t))
+        return CHAT_OFFLINE.location;
+      if (/hour|open|close|timing|what time|when/.test(t))
+        return CHAT_OFFLINE.hours;
+      return CHAT_OFFLINE._default;
     }
 
     function chatGreet() {
       if (chatGreeted) return;
       chatGreeted = true;
-      chatAddText("bot", CHAT_GREETING);
+      chatAddBot(CHAT_GREETING);
     }
 
     function setChat(open) {
@@ -732,7 +769,7 @@
       chatSuggests.addEventListener("click", function (e) {
         var chip = e.target.closest(".chat__chip");
         if (!chip) return;
-        chatAsk(chip.getAttribute("data-q"), chip.textContent.trim());
+        askAgent(chip.textContent.trim());
       });
     }
 
@@ -740,14 +777,9 @@
       chatForm.addEventListener("submit", function (e) {
         e.preventDefault();
         var text = (chatInput.value || "").trim();
-        if (!text) return;
+        if (!text || chatBusy) return;
         chatInput.value = "";
-        chatAddText("user", text);
-        var intent = chatIntent(text);
-        window.setTimeout(function () {
-          if (intent) chatAddAnswer(intent);
-          else chatAddText("bot", CHAT_FALLBACK);
-        }, 260);
+        askAgent(text);
       });
     }
 
