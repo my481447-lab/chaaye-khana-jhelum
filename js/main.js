@@ -581,6 +581,13 @@
     var CHAT_ENDPOINT =
       chat.getAttribute("data-chat-endpoint") || "/api/chat";
 
+    // If the endpoint is a localhost dev server but this page isn't on
+    // localhost (i.e. the site is deployed and the backend isn't), skip the
+    // network call and use the verified offline answers directly.
+    var pageIsLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    var endpointIsLocal = /\/\/(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(CHAT_ENDPOINT);
+    var chatOfflineOnly = endpointIsLocal && !pageIsLocal;
+
     // Rolling conversation sent to the agent (it caps this server-side too).
     var chatHistory = []; // [{ role: "user"|"assistant", content }]
     var CHAT_HISTORY_MAX = 12;
@@ -670,11 +677,25 @@
     function askAgent(message) {
       if (chatBusy) return;
       chatAddUser(message);
-      chatHistory.push({ role: "user", content: message });
       setChatBusy(true);
 
       var typing = chatAddBot("…");
       typing.classList.add("chat__msg--typing");
+
+      // Deployed site with no reachable backend -> answer offline, no request.
+      if (chatOfflineOnly) {
+        window.setTimeout(function () {
+          typing.querySelector(".chat__bubble").textContent =
+            offlineAnswerFor(message);
+          typing.classList.remove("chat__msg--typing");
+          setChatBusy(false);
+          chatScroll();
+          if (chatInput) chatInput.focus({ preventScroll: true });
+        }, 260);
+        return;
+      }
+
+      chatHistory.push({ role: "user", content: message });
 
       var controller =
         typeof AbortController !== "undefined" ? new AbortController() : null;
