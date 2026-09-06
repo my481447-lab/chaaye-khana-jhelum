@@ -1,0 +1,10 @@
+# Vercel deploys only the static website (index.html, css, js, assets).
+# The backend (server/) is a standalone Express app — deploy it separately
+# (Railway / Render / Fly.io) and point data-chat-endpoint in index.html at it.
+
+server/
+node_modules/
+README.md
+Chayee.jpeg
+images.png
+.claude/
