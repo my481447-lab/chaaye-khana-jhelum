@@ -49,18 +49,18 @@ export function getConfig() {
       // claude-sonnet-5 or claude-opus-5 if you want a stronger model.
       model: process.env.AGENT_MODEL || "claude-haiku-4-5",
       effort: process.env.AGENT_EFFORT || "low",
-      maxTokens: num("AGENT_MAX_TOKENS", 600),
+      maxTokens: num("AGENT_MAX_TOKENS", 450),
       enabled: Boolean(process.env.ANTHROPIC_API_KEY),
 
       // Hard ceilings. When any is hit the agent stops calling the API until
       // rollover (new day / new month). 0 = no limit (not recommended).
       // Conservative defaults so an un-configured deploy still can't run up a
       // bill — raise them with env vars if the bot is busier than this.
-      dailyUsdLimit: num("AGENT_DAILY_USD_LIMIT", 0.5),
-      monthlyUsdLimit: num("AGENT_MONTHLY_USD_LIMIT", 5),
+      dailyUsdLimit: num("AGENT_DAILY_USD_LIMIT", 0.3),
+      monthlyUsdLimit: num("AGENT_MONTHLY_USD_LIMIT", 3),
       // Absolute call count per day — holds even if token pricing is wrong.
-      // ~500 Haiku FAQ answers/day is plenty for one restaurant branch.
-      maxCallsPerDay: num("AGENT_MAX_CALLS_PER_DAY", 500),
+      // ~200 Haiku FAQ answers/day is plenty for one restaurant branch.
+      maxCallsPerDay: num("AGENT_MAX_CALLS_PER_DAY", 200),
 
       // Answer cache: identical questions are served free for this long.
       cacheTtlMs: num("AGENT_CACHE_TTL_MS", 15 * 60_000),
@@ -82,13 +82,13 @@ export function getConfig() {
       },
       chat: {
         windowMs: num("CHAT_RATE_WINDOW_MS", 60_000),
-        max: num("CHAT_RATE_MAX", 8),
+        max: num("CHAT_RATE_MAX", 5),
       },
       // Global ceiling across ALL clients — catches distributed abuse that
       // slips past the per-IP limit.
       chatGlobal: {
         windowMs: num("CHAT_GLOBAL_WINDOW_MS", 60_000),
-        max: num("CHAT_GLOBAL_MAX", 60),
+        max: num("CHAT_GLOBAL_MAX", 25),
       },
     },
   };
