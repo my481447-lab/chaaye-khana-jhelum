@@ -66,10 +66,13 @@ router.get("/health", (req, res) => {
     spend: {
       dayUsd: spend.dayUsd,
       dayLimitUsd: config.agent.dailyUsdLimit,
+      dayCalls: spend.dayCalls,
+      dayCallLimit: config.agent.maxCallsPerDay,
       monthUsd: spend.monthUsd,
       monthLimitUsd: config.agent.monthlyUsdLimit,
-      agentCalls: spend.calls,
+      agentCallsTotal: spend.calls,
       cachedAnswers: cacheStats().size,
+      counterPersistent: spend.persistent,
     },
   });
 });

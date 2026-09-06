@@ -52,10 +52,12 @@ export function getConfig() {
       maxTokens: num("AGENT_MAX_TOKENS", 600),
       enabled: Boolean(process.env.ANTHROPIC_API_KEY),
 
-      // Hard USD ceilings. When hit, the agent stops calling the API until
+      // Hard ceilings. When any is hit the agent stops calling the API until
       // rollover (new day / new month). 0 = no limit (not recommended).
       dailyUsdLimit: num("AGENT_DAILY_USD_LIMIT", 1),
       monthlyUsdLimit: num("AGENT_MONTHLY_USD_LIMIT", 10),
+      // Absolute call count per day — holds even if token pricing is wrong.
+      maxCallsPerDay: num("AGENT_MAX_CALLS_PER_DAY", 1500),
 
       // Answer cache: identical questions are served free for this long.
       cacheTtlMs: num("AGENT_CACHE_TTL_MS", 15 * 60_000),
@@ -98,6 +100,19 @@ export function getConfig() {
     // Not fatal — the rest of the API still works — but make it loud.
     console.warn(
       "[config] ANTHROPIC_API_KEY is not set. The /api/chat agent will be disabled.",
+    );
+  }
+  if (
+    isProd &&
+    config.agent.apiKey &&
+    config.agent.dailyUsdLimit <= 0 &&
+    config.agent.monthlyUsdLimit <= 0 &&
+    config.agent.maxCallsPerDay <= 0
+  ) {
+    console.warn(
+      "[config] WARNING: no spend ceiling is set (AGENT_DAILY_USD_LIMIT / " +
+        "AGENT_MONTHLY_USD_LIMIT / AGENT_MAX_CALLS_PER_DAY all 0). A public " +
+        "chat endpoint with no ceiling can run up an API bill. Set at least one.",
     );
   }
 

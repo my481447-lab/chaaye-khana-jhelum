@@ -2,28 +2,74 @@
  * Spend guard — the hard backstop against runaway API cost.
  *
  * Every agent call is:
- *   1. checked against a per-day and per-month USD ceiling BEFORE the API is
- *      hit — if either is exceeded, the call is refused for free.
- *   2. after the API responds, its real token usage is converted to an
- *      estimated USD cost and added to the running totals.
+ *   1. checked BEFORE the API is hit against three ceilings — per-day USD,
+ *      per-month USD, and an absolute per-day call count. If any is exceeded,
+ *      the call is refused for free.
+ *   2. after the API responds, its real token usage is priced and added to the
+ *      running totals.
  *
- * Totals are persisted to a small JSON file so a restart / redeploy does not
- * reset the counter. Rollover is automatic (new day / new month).
+ * The counter lives IN MEMORY (always authoritative for this process) and is
+ * ALSO written to disk so a normal restart doesn't reset it. Rollover is
+ * automatic (new day / new month).
  *
- * This is defence in depth. You should ALSO set a spend limit on the API key
- * (or its workspace) in the Anthropic Console — that limit cannot be bypassed
- * by any bug in this file.
+ * IMPORTANT — serverless: on read-only / ephemeral filesystems (Vercel/Netlify
+ * functions) disk persistence and even in-memory counters reset on every cold
+ * start, so these ceilings become best-effort only. On such hosts the Anthropic
+ * Console spend limit is your real cap. For a durable cap, run this on a host
+ * that keeps the process alive (Railway, Render, Fly.io, a VPS) or back the
+ * counter with Redis. See SECURITY.md.
+ *
+ * This is defence in depth. ALWAYS also set a spend limit on the API key (or
+ * its workspace) in the Anthropic Console — no bug in this file can bypass it.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { getConfig } from "../config.js";
 import { logger } from "../logger.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const STORE_PATH = path.join(here, "..", "..", ".data", "spend.json");
+
+// Pick a writable location: explicit override → project .data → OS temp dir.
+const CANDIDATE_PATHS = [
+  process.env.SPEND_STORE_PATH,
+  path.join(here, "..", "..", ".data", "spend.json"),
+  path.join(tmpdir(), "chaaye-khana-spend.json"),
+].filter(Boolean);
+
+let STORE_PATH = null;
+let persistenceWorks = false;
+for (const p of CANDIDATE_PATHS) {
+  try {
+    mkdirSync(path.dirname(p), { recursive: true });
+    writeFileSync(p, readFileSyncOr(p, "{}"), { flag: "a" }); // touch, keep contents
+    STORE_PATH = p;
+    persistenceWorks = true;
+    break;
+  } catch {
+    /* try the next candidate */
+  }
+}
+if (!persistenceWorks) {
+  logger.warn("spendGuard.no_persistence", {
+    note: "spend counter is in-memory only; it resets on restart. Rely on the Anthropic Console spend limit.",
+  });
+}
+
+function readFileSyncOr(p, fallback) {
+  try {
+    return readFileSync(p, "utf8");
+  } catch {
+    return fallback;
+  }
+}
+
+export function persistenceHealthy() {
+  return persistenceWorks;
+}
 
 /**
  * USD per 1,000,000 tokens. Cache reads are ~0.1x input; cache writes ~1.25x.
@@ -72,19 +118,30 @@ function monthKey(d = new Date()) {
   return d.toISOString().slice(0, 7); // YYYY-MM
 }
 
+const FRESH = () => ({
+  day: todayKey(),
+  dayUsd: 0,
+  dayCalls: 0,
+  month: monthKey(),
+  monthUsd: 0,
+  calls: 0,
+});
+
 function load() {
+  if (!STORE_PATH) return FRESH();
   try {
-    return JSON.parse(readFileSync(STORE_PATH, "utf8"));
+    return { ...FRESH(), ...JSON.parse(readFileSync(STORE_PATH, "utf8")) };
   } catch {
-    return { day: todayKey(), dayUsd: 0, month: monthKey(), monthUsd: 0, calls: 0 };
+    return FRESH();
   }
 }
 
 function save(state) {
+  if (!STORE_PATH) return;
   try {
-    mkdirSync(path.dirname(STORE_PATH), { recursive: true });
     writeFileSync(STORE_PATH, JSON.stringify(state));
   } catch (err) {
+    persistenceWorks = false;
     logger.warn("spendGuard.persist_failed", { error: err?.message });
   }
 }
@@ -97,6 +154,7 @@ function rollover() {
   if (state.day !== d) {
     state.day = d;
     state.dayUsd = 0;
+    state.dayCalls = 0;
   }
   if (state.month !== m) {
     state.month = m;
@@ -111,16 +169,20 @@ function rollover() {
 export function checkBudget() {
   rollover();
   const { agent } = getConfig();
-  const dayLimit = agent.dailyUsdLimit;
-  const monthLimit = agent.monthlyUsdLimit;
+  const snap = { dayUsd: state.dayUsd, monthUsd: state.monthUsd, dayCalls: state.dayCalls };
 
-  if (dayLimit > 0 && state.dayUsd >= dayLimit) {
-    return { ok: false, reason: "daily-limit", dayUsd: state.dayUsd, monthUsd: state.monthUsd };
+  if (agent.dailyUsdLimit > 0 && state.dayUsd >= agent.dailyUsdLimit) {
+    return { ok: false, reason: "daily-usd-limit", ...snap };
   }
-  if (monthLimit > 0 && state.monthUsd >= monthLimit) {
-    return { ok: false, reason: "monthly-limit", dayUsd: state.dayUsd, monthUsd: state.monthUsd };
+  if (agent.monthlyUsdLimit > 0 && state.monthUsd >= agent.monthlyUsdLimit) {
+    return { ok: false, reason: "monthly-usd-limit", ...snap };
   }
-  return { ok: true, dayUsd: state.dayUsd, monthUsd: state.monthUsd };
+  // Absolute call ceiling — a backstop that holds even if token pricing is
+  // wrong or an attacker sends tiny near-zero-cost requests.
+  if (agent.maxCallsPerDay > 0 && state.dayCalls >= agent.maxCallsPerDay) {
+    return { ok: false, reason: "daily-call-limit", ...snap };
+  }
+  return { ok: true, ...snap };
 }
 
 /**
@@ -131,12 +193,16 @@ export function recordUsage(model, usage) {
   const cost = estimateCostUSD(model, usage);
   state.dayUsd = round(state.dayUsd + cost);
   state.monthUsd = round(state.monthUsd + cost);
+  state.dayCalls = (state.dayCalls || 0) + 1;
   state.calls = (state.calls || 0) + 1;
   save(state);
 
   const { agent } = getConfig();
   if (agent.dailyUsdLimit > 0 && state.dayUsd >= agent.dailyUsdLimit) {
-    logger.warn("spendGuard.daily_limit_reached", { dayUsd: state.dayUsd, limit: agent.dailyUsdLimit });
+    logger.warn("spendGuard.daily_usd_limit_reached", {
+      dayUsd: state.dayUsd,
+      limit: agent.dailyUsdLimit,
+    });
   }
   return { cost, dayUsd: state.dayUsd, monthUsd: state.monthUsd };
 }
@@ -146,9 +212,11 @@ export function spendSnapshot() {
   return {
     day: state.day,
     dayUsd: state.dayUsd,
+    dayCalls: state.dayCalls || 0,
     month: state.month,
     monthUsd: state.monthUsd,
     calls: state.calls || 0,
+    persistent: persistenceWorks,
   };
 }
 
