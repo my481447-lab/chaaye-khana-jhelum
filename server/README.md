@@ -33,15 +33,53 @@ until `ANTHROPIC_API_KEY` is set.
 |---|---|
 | `PORT` | listen port (default `8787`) |
 | `NODE_ENV` | `development` / `production` |
-| `CORS_ORIGINS` | comma-separated allow-list of site origins that may call the API. **Required in production.** |
-| `ANTHROPIC_API_KEY` | server-side only; powers the agent. Never sent to the browser. |
-| `AGENT_MODEL` | default `claude-opus-5`. For a busy public widget, `claude-haiku-4-5` or `claude-sonnet-5` are cheaper and fast enough. |
+| `CORS_ORIGINS` | comma-separated allow-list of site origins that may call the API **and** use the chat. **Required in production.** |
+| `ANTHROPIC_API_KEY` | server-side only; powers the agent. Never sent to the browser, never logged. |
+| `AGENT_MODEL` | default `claude-haiku-4-5` (cheapest, fine for a scoped FAQ). `claude-sonnet-5` ≈ 2×, `claude-opus-5` ≈ 5×. |
 | `AGENT_EFFORT` | `low` (default) … `max` |
-| `AGENT_MAX_TOKENS` | reply cap (default `800`) |
-| `API_RATE_*` / `CHAT_RATE_*` | per-IP rate limits |
+| `AGENT_MAX_TOKENS` | reply cap (default `600`) |
+| `AGENT_DAILY_USD_LIMIT` / `AGENT_MONTHLY_USD_LIMIT` | hard spend ceilings (default `$1` / `$10`). Agent stops calling the API when hit. |
+| `AGENT_CACHE_TTL_MS` / `AGENT_CACHE_MAX` | identical questions served free from memory (default 15 min / 500 entries) |
+| `ENFORCE_CHAT_ORIGIN` | `true` (default) — chat only accepts requests with an allow-listed `Origin`/`Referer` |
+| `CHAT_ACCESS_TOKEN` | optional shared token the frontend sends as `X-Chat-Token` (not secret; stops lazy bots) |
+| `API_RATE_*` / `CHAT_RATE_*` / `CHAT_GLOBAL_*` | rate limits (per-IP, plus a global ceiling for chat) |
 
 `.env` is git-ignored. **Never** commit it and **never** put the key in
 frontend code.
+
+---
+
+## Protecting the API key / credits
+
+"My credits drain without me using it" happens when a deployed `/api/chat` is a
+public URL and bots hit it. Layered defence, cheapest first:
+
+1. **Answer cache** (`lib/answerCache.js`) — a restaurant chat asks the same few
+   questions constantly. Identical single-turn questions are served from memory
+   for `AGENT_CACHE_TTL_MS` with **no API call**.
+2. **Hard USD ceiling** (`lib/spendGuard.js`) — every reply's real token usage
+   is priced and added to a running day/month total (persisted in
+   `server/.data/spend.json`). When `AGENT_DAILY_USD_LIMIT` or
+   `AGENT_MONTHLY_USD_LIMIT` is reached, the agent returns a friendly "on a
+   break" message **without calling the API** until rollover.
+3. **Origin/Referer gate** (`chatOriginGuard`) — CORS only stops browsers;
+   `curl`/bots ignore it. This blocks any chat request whose `Origin`/`Referer`
+   isn't in `CORS_ORIGINS` (and bots that send neither).
+4. **Rate limits** — per-IP (`CHAT_RATE_MAX`, default 8/min) **and** a global
+   bucket across all callers (`CHAT_GLOBAL_MAX`, default 60/min) to catch
+   distributed floods.
+5. **Cheap model by default** — `claude-haiku-4-5`.
+6. **Prompt caching** — the system prompt + knowledge block are sent as
+   cacheable prefixes; `chat.usage` logs `cacheReadTokens` so you can confirm
+   it's working (cache reads cost ~10% of normal input).
+7. **Cost visibility** — `GET /api/health` returns `spend` (day/month estimate,
+   limits, call count, cache size).
+
+**The one control no code can bypass:** set a **spend limit on the API key (or
+its workspace)** in the Anthropic Console → *Settings → Limits*. Use a
+**dedicated key** for this project so a leak can only cost this budget. If you
+ever push code to a public repo, double-check `.env` is not in it — leaked keys
+are scraped and drained within minutes.
 
 ---
 
@@ -102,15 +140,20 @@ src/
     cart.js           re-prices a cart against the verified menu
     redact.js         OUTPUT guardrail — blocks secret-shaped / prompt-leak replies
     injection.js      screens incoming messages for injection attempts (logs, caps length)
+    spendGuard.js     token→USD accounting + hard day/month ceiling (persisted)
+    answerCache.js    TTL cache of identical single-turn answers (no API call)
   agent/
     systemPrompt.js   the locked system prompt (role + scope + all guardrails)
     knowledge.js      builds the "VERIFIED RESTAURANT INFORMATION" block from content.js
-    restaurantAgent.js the single Claude call + refusal/error handling + redaction
+    restaurantAgent.js cache check → budget check → Claude call → record usage
   middleware/
-    security.js       helmet, strict CORS allow-list, 16 kB body cap, rate limiters
+    security.js       helmet, CORS allow-list, body cap, rate limiters, chatOriginGuard
     common.js         request id, 404, error handler (never leaks stack/config)
   routes/index.js     the /api router
-test/guardrails.test.js
+  .data/spend.json    runtime spend counter (git-ignored, auto-created)
+test/
+  guardrails.test.js  redaction, injection, cart, search
+  cost.test.js        cost estimation, budget ceiling, answer cache
 ```
 
 ---
@@ -165,7 +208,10 @@ publicly-listed **business** contact details are shared.
 
 ### Keys stay server-side
 `ANTHROPIC_API_KEY` lives in the server environment. Frontend code calls
-`POST /api/chat`; it never sees the key. `.env` is git-ignored.
+`POST /api/chat`; it never sees the key. `.env` is git-ignored. It is never
+logged (the logger scrubs key-shaped strings) and never returned in any
+response or error. See **Protecting the API key / credits** above for the
+abuse / cost-drain defences.
 
 ---
 

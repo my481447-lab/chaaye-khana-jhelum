@@ -10,6 +10,9 @@ server/.env
 server/.env.*
 !server/.env.example
 
+# runtime state (spend counter, etc.)
+server/.data/
+
 # logs & os
 *.log
 npm-debug.log*

@@ -37,8 +37,14 @@ import {
 import { searchMenu } from "../lib/search.js";
 import { quoteCart } from "../lib/cart.js";
 import { askRestaurantAgent } from "../agent/restaurantAgent.js";
-import { chatRateLimiter } from "../middleware/security.js";
+import {
+  chatRateLimiter,
+  chatGlobalRateLimiter,
+  chatOriginGuard,
+} from "../middleware/security.js";
 import { MAX_HISTORY_MESSAGES } from "../lib/injection.js";
+import { spendSnapshot } from "../lib/spendGuard.js";
+import { cacheStats } from "../lib/answerCache.js";
 
 const config = getConfig();
 const router = Router();
@@ -51,10 +57,20 @@ function cacheable(res) {
 /* ---------- Health ---------- */
 
 router.get("/health", (req, res) => {
+  const spend = spendSnapshot();
   res.json({
     status: "ok",
     time: new Date().toISOString(),
     agent: config.agent.enabled ? "enabled" : "disabled",
+    // Cost visibility — estimated only, no secrets.
+    spend: {
+      dayUsd: spend.dayUsd,
+      dayLimitUsd: config.agent.dailyUsdLimit,
+      monthUsd: spend.monthUsd,
+      monthLimitUsd: config.agent.monthlyUsdLimit,
+      agentCalls: spend.calls,
+      cachedAnswers: cacheStats().size,
+    },
   });
 });
 
@@ -153,7 +169,7 @@ router.post("/cart/quote", (req, res) => {
 
 /* ---------- Chat (restaurant agent) ---------- */
 
-router.post("/chat", chatRateLimiter, async (req, res) => {
+router.post("/chat", chatOriginGuard, chatGlobalRateLimiter, chatRateLimiter, async (req, res) => {
   const message = req.body?.message;
   const history = req.body?.history;
 

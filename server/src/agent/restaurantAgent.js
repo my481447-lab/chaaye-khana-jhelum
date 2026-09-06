@@ -24,8 +24,14 @@ import {
   MAX_MESSAGE_CHARS,
   MAX_HISTORY_MESSAGES,
 } from "../lib/injection.js";
+import { checkBudget, recordUsage } from "../lib/spendGuard.js";
+import { getCached, setCached } from "../lib/answerCache.js";
 
 const config = getConfig();
+
+const BUDGET_MESSAGE =
+  "The chat assistant is taking a short break. You can still browse the menu " +
+  "and offers here, or call the branch on (0544) 610711.";
 
 const client = config.agent.enabled
   ? new Anthropic({ apiKey: config.agent.apiKey })
@@ -71,8 +77,32 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
     logger.warn("chat.suspicious_input", { requestId, patterns: screen.matched });
   }
 
+  const model = config.agent.model;
+  const sanitisedHistory = sanitiseHistory(history);
+  const singleTurn = sanitisedHistory.length === 0;
+
+  // 1) Free path: an identical single-turn question answered recently.
+  if (singleTurn) {
+    const cached = getCached(clean, model);
+    if (cached) {
+      return { reply: cached.reply, meta: { ...cached.meta, cached: true } };
+    }
+  }
+
+  // 2) Hard cost ceiling — refuse for free if the day/month budget is spent.
+  const budget = checkBudget();
+  if (!budget.ok) {
+    logger.warn("chat.budget_exceeded", {
+      requestId,
+      reason: budget.reason,
+      dayUsd: budget.dayUsd,
+      monthUsd: budget.monthUsd,
+    });
+    return { reply: BUDGET_MESSAGE, meta: { budget: budget.reason } };
+  }
+
   const messages = [
-    ...sanitiseHistory(history),
+    ...sanitisedHistory,
     {
       role: "user",
       content:
@@ -94,7 +124,7 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
   ];
 
   const baseRequest = {
-    model: config.agent.model,
+    model,
     max_tokens: config.agent.maxTokens,
     thinking: { type: "adaptive" },
     output_config: { effort: config.agent.effort },
@@ -104,7 +134,7 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
 
   let response;
   try {
-    if (FALLBACK_MODELS.test(config.agent.model)) {
+    if (FALLBACK_MODELS.test(model)) {
       try {
         response = await client.beta.messages.create({
           ...baseRequest,
@@ -134,6 +164,18 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
     return { reply: GENERIC_ERROR, meta: { error: true } };
   }
 
+  // Account for what this call cost, whatever happens next.
+  const spend = recordUsage(response.model || model, response.usage || {});
+  logger.info("chat.usage", {
+    requestId,
+    model: response.model,
+    inputTokens: response.usage?.input_tokens,
+    cacheReadTokens: response.usage?.cache_read_input_tokens,
+    outputTokens: response.usage?.output_tokens,
+    costUsd: round4(spend.cost),
+    dayUsd: round4(spend.dayUsd),
+  });
+
   if (response.stop_reason === "refusal") {
     logger.warn("chat.refusal", {
       requestId,
@@ -153,15 +195,23 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
     logger.error("chat.output_blocked", { requestId, reason });
   }
 
-  return {
-    reply: text,
-    meta: {
-      model: response.model,
-      stopReason: response.stop_reason,
-      suspiciousInput: screen.suspicious,
-      outputBlocked: blocked,
-    },
+  const meta = {
+    model: response.model,
+    stopReason: response.stop_reason,
+    suspiciousInput: screen.suspicious,
+    outputBlocked: blocked,
   };
+
+  // Cache clean single-turn answers so the same question is free next time.
+  if (singleTurn && !blocked && response.stop_reason !== "refusal") {
+    setCached(clean, model, text, { model: response.model }, config.agent.cacheTtlMs, config.agent.cacheMaxEntries);
+  }
+
+  return { reply: text, meta };
+}
+
+function round4(n) {
+  return Math.round(n * 1e4) / 1e4;
 }
 
 /**
