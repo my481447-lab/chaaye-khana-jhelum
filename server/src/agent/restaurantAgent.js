@@ -40,6 +40,11 @@ const client = config.agent.enabled
 // Models that get server-side refusal fallbacks (opt-in per the Anthropic SDK).
 const FALLBACK_MODELS = /^claude-(opus-5|fable-5|mythos-5)/;
 
+// Models that accept `thinking: {type:"adaptive"}` and `output_config.effort`.
+// Haiku 4.5, Sonnet 4.5 and older reject both with a 400.
+const SUPPORTS_ADAPTIVE_THINKING =
+  /^claude-(opus-5|opus-4-8|opus-4-7|opus-4-6|sonnet-5|sonnet-4-6|fable-5|mythos-5)/;
+
 const GENERIC_ERROR =
   "Sorry — I'm having trouble right now. Please try again in a moment, or " +
   "call the branch on (0544) 610711.";
@@ -126,11 +131,17 @@ export async function askRestaurantAgent({ message, history = [], requestId }) {
   const baseRequest = {
     model,
     max_tokens: config.agent.maxTokens,
-    thinking: { type: "adaptive" },
-    output_config: { effort: config.agent.effort },
     system,
     messages,
   };
+
+  // Adaptive thinking + effort are only valid on newer models. Haiku 4.5 and
+  // older reject them (400). A scoped FAQ bot needs neither, so we simply omit
+  // them unless the model is known to support them.
+  if (SUPPORTS_ADAPTIVE_THINKING.test(model)) {
+    baseRequest.thinking = { type: "adaptive" };
+    baseRequest.output_config = { effort: config.agent.effort };
+  }
 
   let response;
   try {
