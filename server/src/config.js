@@ -54,10 +54,13 @@ export function getConfig() {
 
       // Hard ceilings. When any is hit the agent stops calling the API until
       // rollover (new day / new month). 0 = no limit (not recommended).
-      dailyUsdLimit: num("AGENT_DAILY_USD_LIMIT", 1),
-      monthlyUsdLimit: num("AGENT_MONTHLY_USD_LIMIT", 10),
+      // Conservative defaults so an un-configured deploy still can't run up a
+      // bill — raise them with env vars if the bot is busier than this.
+      dailyUsdLimit: num("AGENT_DAILY_USD_LIMIT", 0.5),
+      monthlyUsdLimit: num("AGENT_MONTHLY_USD_LIMIT", 5),
       // Absolute call count per day — holds even if token pricing is wrong.
-      maxCallsPerDay: num("AGENT_MAX_CALLS_PER_DAY", 1500),
+      // ~500 Haiku FAQ answers/day is plenty for one restaurant branch.
+      maxCallsPerDay: num("AGENT_MAX_CALLS_PER_DAY", 500),
 
       // Answer cache: identical questions are served free for this long.
       cacheTtlMs: num("AGENT_CACHE_TTL_MS", 15 * 60_000),

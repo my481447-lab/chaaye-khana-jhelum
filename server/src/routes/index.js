@@ -58,10 +58,23 @@ function cacheable(res) {
 
 router.get("/health", (req, res) => {
   const spend = spendSnapshot();
+  const rawKey = process.env.ANTHROPIC_API_KEY || "";
   res.json({
     status: "ok",
     time: new Date().toISOString(),
     agent: config.agent.enabled ? "enabled" : "disabled",
+    // Deploy diagnostics — booleans / lengths only, never the key itself.
+    // Lets us confirm the running build is current and whether it can see
+    // the ANTHROPIC_API_KEY environment variable. Safe to expose.
+    build: {
+      commit: (process.env.VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7),
+      nodeEnv: config.nodeEnv,
+      keyPresent: rawKey.length > 0,
+      keyLooksValid: /^sk-ant-/.test(rawKey.trim()),
+      keyLen: rawKey.length,
+      keyHadWhitespace: rawKey !== rawKey.trim(),
+      model: config.agent.model,
+    },
     // Cost visibility — estimated only, no secrets.
     spend: {
       dayUsd: spend.dayUsd,
