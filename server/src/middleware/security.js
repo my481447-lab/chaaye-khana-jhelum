@@ -38,20 +38,28 @@ export function baseSecurity(app) {
 
   app.use(
     cors({
-      origin(origin, cb) {
-        // Allow same-origin / server-to-server (no Origin header) and any
-        // explicitly allow-listed origin. Everything else is rejected.
-        if (!origin) return cb(null, true);
-        if (config.corsOrigins.includes(origin)) return cb(null, true);
-        return cb(new Error("Origin not allowed"), false);
-      },
+      // The content endpoints (menu, offers, hours, …) serve public, verified
+      // data — reflecting the caller's origin is fine. The only endpoint that
+      // costs money, /api/chat, is protected separately by chatOriginGuard
+      // (same-origin OR allow-list), the rate limiters and the spend guard.
+      origin: true,
+      credentials: false,
       methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Content-Type", "X-Chat-Token"],
       maxAge: 600,
     }),
   );
 
   app.use(express.json({ limit: "16kb" }));
+}
+
+/** Host of a URL, or null. */
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
 }
 
 export const apiRateLimiter = rateLimit({
@@ -104,18 +112,27 @@ export function chatOriginGuard(req, res, next) {
 
   const origin = req.get("Origin");
   const referer = req.get("Referer");
-  const source = origin || (referer ? safeOrigin(referer) : null);
+  const source = origin || referer || null;
 
   // No Origin AND no Referer → almost always a script / bot. Block.
   if (!source) {
     logger.warn("chat.no_origin", { requestId: req.id, ip: req.ip });
     return res.status(403).json({ reply: "Chat is not available from here." });
   }
-  if (!config.corsOrigins.includes(source)) {
-    logger.warn("chat.origin_not_allowed", { requestId: req.id, source });
-    return res.status(403).json({ reply: "Chat is not available from here." });
-  }
-  next();
+
+  const sourceHost = hostOf(source);
+  const reqHost = req.get("X-Forwarded-Host") || req.get("Host");
+
+  // Same-origin: the page and this API are on one domain (e.g. a single Vercel
+  // project). Genuinely from our own site.
+  if (sourceHost && reqHost && sourceHost === reqHost) return next();
+
+  // Otherwise the source origin must be in the explicit allow-list.
+  const sourceOrigin = safeOrigin(source);
+  if (sourceOrigin && config.corsOrigins.includes(sourceOrigin)) return next();
+
+  logger.warn("chat.origin_not_allowed", { requestId: req.id, source: sourceHost });
+  return res.status(403).json({ reply: "Chat is not available from here." });
 }
 
 function safeOrigin(url) {

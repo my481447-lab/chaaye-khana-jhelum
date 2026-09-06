@@ -578,13 +578,18 @@
     var chatGreeted = false;
     var chatBusy = false;
 
-    var CHAT_ENDPOINT =
-      chat.getAttribute("data-chat-endpoint") || "/api/chat";
-
-    // If the endpoint is a localhost dev server but this page isn't on
-    // localhost (i.e. the site is deployed and the backend isn't), skip the
-    // network call and use the verified offline answers directly.
+    // Where the chat backend lives:
+    //  1. an explicit data-chat-endpoint on the widget wins;
+    //  2. on localhost -> the dev backend from server/ (npm start, :8787);
+    //  3. deployed -> same-origin /api/chat (the Vercel serverless function).
     var pageIsLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    var CHAT_ENDPOINT =
+      chat.getAttribute("data-chat-endpoint") ||
+      (pageIsLocal ? "http://localhost:8787/api/chat" : "/api/chat");
+
+    // Safety net: if the endpoint points at localhost but the page isn't on
+    // localhost (deployed frontend, backend not running), skip the request and
+    // use the verified offline answers instead of showing an error.
     var endpointIsLocal = /\/\/(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(CHAT_ENDPOINT);
     var chatOfflineOnly = endpointIsLocal && !pageIsLocal;
 

@@ -90,10 +90,14 @@ export function getConfig() {
     },
   };
 
-  // Fail fast on genuinely broken configuration, but never print the value.
+  // In production CORS_ORIGINS should be set, but same-origin requests (the
+  // frontend and this API on one domain — e.g. a single Vercel project) are
+  // always allowed by the same-origin check in chatOriginGuard, so a missing
+  // value is a warning, not fatal.
   if (isProd && config.corsOrigins.length === 0) {
-    throw new Error(
-      "CORS_ORIGINS must be set in production (comma-separated list of allowed site origins).",
+    console.warn(
+      "[config] CORS_ORIGINS is not set. Cross-origin sites cannot call this " +
+        "API; only same-origin requests (frontend + API on one domain) work.",
     );
   }
   if (isProd && !config.agent.apiKey) {

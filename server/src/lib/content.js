@@ -8,15 +8,13 @@
  */
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(here, "..", "data");
-
+// `new URL(relative, import.meta.url)` is the bundler-friendly way to reach a
+// sibling data file — serverless build tracers (Vercel) follow these reliably,
+// unlike a path built with path.join().
 function load(name) {
-  const raw = readFileSync(path.join(dataDir, name), "utf8");
-  return deepFreeze(JSON.parse(raw));
+  const url = new URL(`../data/${name}`, import.meta.url);
+  return deepFreeze(JSON.parse(readFileSync(url, "utf8")));
 }
 
 function deepFreeze(obj) {

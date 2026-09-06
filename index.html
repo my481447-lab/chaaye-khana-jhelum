@@ -1646,14 +1646,13 @@
        to the phone numbers. Behaviour: js/main.js.
        ============================================================ -->
   <!--
-    data-chat-endpoint: the backend chat API this widget talks to.
-      • Local dev (backend from server/ running on :8787): as below.
-      • Production: set this to your deployed backend, e.g.
-        data-chat-endpoint="https://your-backend.example/api/chat"
-        or "/api/chat" if the backend is served from the same domain.
-    The Anthropic API key stays on the server — it is NEVER sent here.
+    Chat widget. It figures out its backend automatically (js/main.js):
+      • deployed        -> same-origin /api/chat  (Vercel serverless function)
+      • on localhost    -> http://localhost:8787/api/chat  (dev server from server/)
+    Only add data-chat-endpoint="…" here to force a specific backend URL.
+    The Anthropic API key stays on the server — it is NEVER sent to the browser.
   -->
-  <div class="chat" data-chat data-chat-endpoint="http://localhost:8787/api/chat">
+  <div class="chat" data-chat>
     <button class="chat__launcher" type="button" data-chat-open
             aria-expanded="false" aria-controls="chat-panel" aria-label="Open chat">
       <svg class="chat__ico chat__ico--open" viewBox="0 0 24 24" aria-hidden="true" focusable="false">

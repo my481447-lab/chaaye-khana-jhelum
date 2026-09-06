@@ -1,9 +1,18 @@
-# Vercel deploys only the static website (index.html, css, js, assets).
-# The backend (server/) is a standalone Express app — deploy it separately
-# (Railway / Render / Fly.io) and point data-chat-endpoint in index.html at it.
-
-server/
+# Uploaded to Vercel: the static site (index.html, css, js, assets) AND the
+# backend source (server/src) that api/[[...path]].js imports.
+#
+# NOT uploaded — secrets & local-only files:
+server/.env
+server/.env.*
+!server/.env.example
+server/.data/
+server/node_modules/
 node_modules/
+
+# Not needed in the deployment:
+server/test/
+server/README.md
+server/SECURITY.md
 README.md
 Chayee.jpeg
 images.png
